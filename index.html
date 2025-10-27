@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>IIT Madras Hostel Map</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh; padding:20px;
+    }
+    .container {
+      background:#fff; border-radius:20px; padding:40px; box-shadow:0 20px 60px rgba(0,0,0,0.3);
+      max-width: 1200px; margin: 0 auto;
+    }
+    h1 { color:#333; margin-bottom:20px; text-align:center; }
+    .subtitle { text-align:center; color:#666; margin-bottom:30px; font-size:14px; }
+    
+    .map-container {
+      position: relative;
+      background: #f0f4f8;
+      border-radius: 15px;
+      padding: 30px;
+      margin-bottom: 20px;
+      overflow-x: auto;
+    }
+    
+    .map-grid {
+      position: relative;
+      width: 100%;
+      min-height: 600px;
+      background: linear-gradient(to right, #e0e7ef 1px, transparent 1px),
+                  linear-gradient(to bottom, #e0e7ef 1px, transparent 1px);
+      background-size: 50px 50px;
+    }
+    
+    .hostel-marker {
+      position: absolute;
+      padding: 8px 15px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.3s;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      white-space: nowrap;
+    }
+    
+    .hostel-marker:hover {
+      transform: scale(1.1) translateY(-3px);
+      box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+      z-index: 10;
+    }
+    
+    .legend {
+      background: #fff;
+      border: 2px solid #667eea;
+      border-radius: 10px;
+      padding: 15px;
+      margin-top: 20px;
+    }
+    
+    .legend h3 {
+      color: #667eea;
+      margin-bottom: 10px;
+      font-size: 16px;
+    }
+    
+    .legend-item {
+      display: inline-block;
+      margin-right: 20px;
+      margin-bottom: 8px;
+      font-size: 14px;
+      color: #555;
+    }
+
+    .detail-page { display:none; }
+    .detail-page.active { display:block; }
+    .home-page.hidden { display:none; }
+
+    .back-btn {
+      background:#667eea; color:#fff; border:none; padding:12px 25px; border-radius:8px; 
+      cursor:pointer; font-size:16px; margin-bottom:20px; transition:background 0.3s;
+    }
+    .back-btn:hover { background:#5568d3; }
+
+    .building-detail { line-height:1.8; }
+    .building-detail h2 { color:#667eea; margin-bottom:20px; font-size:32px; }
+    .detail-item { margin-bottom:15px; padding:15px; background:#f8f9fa; border-radius:8px; }
+    .detail-label { font-weight:600; color:#555; margin-bottom:5px; }
+    .detail-value { color:#333; }
+    
+    .dropdown-section {
+      text-align: center;
+      margin-top: 30px;
+      padding-top: 30px;
+      border-top: 2px solid #e0e7ef;
+    }
+    
+    .dropdown-section h3 {
+      color: #667eea;
+      margin-bottom: 15px;
+    }
+    
+    select {
+      width: 100%;
+      max-width: 400px;
+      padding: 15px 20px;
+      font-size: 16px;
+      border: 2px solid #ddd;
+      border-radius: 10px;
+      background: #fff;
+      cursor: pointer;
+      transition: border 0.3s;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 15px center;
+      padding-right: 40px;
+    }
+    
+    select:focus { outline: none; border-color: #667eea; }
+    select:hover { border-color: #667eea; }
+    
+    .btn-submit {
+      width: 100%;
+      max-width: 400px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      border: none;
+      padding: 15px;
+      border-radius: 10px;
+      font-size: 18px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 15px;
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+    
+    .btn-submit:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="home-page" id="homePage">
+      <h1>IIT Madras Hostel Selector</h1>
+      <p class="subtitle">Click on any hostel marker on the map or use the dropdown below</p>
+      
+      <div class="map-container">
+        <div class="map-grid">
+          <!-- Hostels positioned based on the map coordinates -->
+          <div class="hostel-marker" style="left: 85%; top: 15%;" onclick="showBuilding('alak')">Alakananda</div>
+          <div class="hostel-marker" style="left: 50%; top: 45%;" onclick="showBuilding('brahma')">Brahmaputra</div>
+          <div class="hostel-marker" style="left: 45%; top: 35%;" onclick="showBuilding('cauv')">Cauvery</div>
+          <div class="hostel-marker" style="left: 75%; top: 25%;" onclick="showBuilding('gana')">Ganga</div>
+          <div class="hostel-marker" style="left: 65%; top: 30%;" onclick="showBuilding('godav')">Godavari</div>
+          <div class="hostel-marker" style="left: 75%; top: 20%;" onclick="showBuilding('yamun')">Yamuna</div>
+          <div class="hostel-marker" style="left: 40%; top: 50%;" onclick="showBuilding('krish')">Krishna</div>
+          <div class="hostel-marker" style="left: 90%; top: 10%;" onclick="showBuilding('maha')">Mahanadi</div>
+          <div class="hostel-marker" style="left: 85%; top: 25%;" onclick="showBuilding('mandak')">Mandakini</div>
+          <div class="hostel-marker" style="left: 55%; top: 35%;" onclick="showBuilding('narma')">Narmada</div>
+          <div class="hostel-marker" style="left: 80%; top: 5%;" onclick="showBuilding('pampa')">Pamba</div>
+          <div class="hostel-marker" style="left: 65%; top: 35%;" onclick="showBuilding('saras')">Saraswathi</div>
+          <div class="hostel-marker" style="left: 55%; top: 5%;" onclick="showBuilding('sarayu')">Sarayu</div>
+          <div class="hostel-marker" style="left: 45%; top: 10%;" onclick="showBuilding('sharav')">Sharavathi</div>
+          <div class="hostel-marker" style="left: 75%; top: 5%;" onclick="showBuilding('sindhu')">Sindhu</div>
+          <div class="hostel-marker" style="left: 80%; top: 2%;" onclick="showBuilding('tampa')">Tamiraparani</div>
+          <div class="hostel-marker" style="left: 55%; top: 40%;" onclick="showBuilding('tap')">Tapti</div>
+          <div class="hostel-marker" style="left: 35%; top: 30%;" onclick="showBuilding('tung')">Tunga</div>
+          <div class="hostel-marker" style="left: 35%; top: 35%;" onclick="showBuilding('bhadra')">Bhadra</div>
+          <div class="hostel-marker" style="left: 45%; top: 15%;" onclick="showBuilding('sabar')">Sabarmati</div>
+          <div class="hostel-marker" style="left: 10%; top: 70%;" onclick="showBuilding('swarna')">Swarnamukhi</div>
+        </div>
+      </div>
+      
+      <div class="legend">
+        <h3>🏢 Available Hostels (21)</h3>
+        <div class="legend-item">• Click any marker to view details</div>
+        <div class="legend-item">• Or use dropdown below</div>
+      </div>
+      
+      <div class="dropdown-section">
+        <h3>Or Select from Dropdown</h3>
+        <select id="buildingSelect">
+          <option value="">-- Select a Hostel --</option>
+          <option value="alak">Alakananda Hostel</option>
+          <option value="yamun">Yamuna Hostel</option>
+          <option value="mandak">Mandakini Hostel</option>
+          <option value="gana">Ganga Hostel</option>
+          <option value="saras">Saraswati Hostel</option>
+          <option value="godav">Godavari Hostel</option>
+          <option value="narma">Narmada Hostel</option>
+          <option value="tap">Tapti Hostel</option>
+          <option value="brahma">Brahmaputra Hostel</option>
+          <option value="pampa">Pamba Hostel</option>
+          <option value="maha">Mahanadi Hostel</option>
+          <option value="tampa">Tamiraparani Hostel</option>
+          <option value="sindhu">Sindhu Hostel</option>
+          <option value="krish">Krishna Hostel</option>
+          <option value="cauv">Cauvery Hostel</option>
+          <option value="tung">Tunga Hostel</option>
+          <option value="bhadra">Bhadra Hostel</option>
+          <option value="sabar">Sabarmati Hostel</option>
+          <option value="sharav">Sharavathi Hostel</option>
+          <option value="sarayu">Sarayu Hostel</option>
+          <option value="swarna">Swarnamukhi Hostel</option>
+        </select>
+        <button class="btn-submit" onclick="showSelectedFromDropdown()">View Details</button>
+      </div>
+    </div>
+
+    <!-- Detail pages for each hostel -->
+    <div class="detail-page" id="alakDetail">
+      <button class="back-btn" onclick="goBack()">← Back to Map</button>
+      <div class="building-detail">
+        <h2>Alakananda Hostel</h2>
+        <div class="detail-item"><div class="detail-label">Location:</div><div class="detail-value">K-18 & L-18</div></div>
+        <div class="detail-item"><div class="detail-label">Energy Consumption (kWh):</div><div class="detail-value">—</div></div>
+        <div class="detail-item"><div class="detail-label">Carbon Emissions (tCO2e):</div><div class="detail-value">—</div></div>
+      </div>
+    </div>
+
+    <div class="detail-page" id="yamunDetail">
+      <button class="back-btn" onclick="goBack()">← Back to Map</button>
+      <div class="building-detail">
+        <h2>Yamuna Hostel</h2>
+        <div class="detail-item"><div class="detail-label">Location:</div><div class="detail-value">K-17 & L-17</div></div>
+        <div class="detail-item"><div class="detail-label">Energy Consumption (kWh):</div><div class="detail-value">—</div></div>
+        <div class="detail-item"><div class="detail-label">Carbon Emissions (tCO2e):</div><div class="detail-value">—</div></div>
+      </div>
+    </div>
+
+    <div class="detail-page" id="mandakDetail">
+      <button class="back-btn" onclick="goBack()">← Back to Map</button>
+      <div class="building-detail">
+        <h2>Mandakini Hostel</h2>
+        <div class="detail-item"><div class="detail-label">Location:</div><div class="detail-value">L-17 & M-17</div></div>
+        <div class="detail-item"><div class="detail-label">Energy Consumption (kWh):</div><div class="detail-value">—</div></div>
+        <div class="detail-item"><div class="detail-label">Carbon Emissions (tCO2e):</div><div class="detail-value">—</div></div>
+      </div>
+    </div>
+
+    <div class="detail-page" id="ganaDetail">
+      <button class="back-btn" onclick="goBack()">← Back to Map</button>
+      <div class="building-detail">
+        <h2>Ganga Hostel</h2>
+        <div class="detail-item"><div class="detail-label">Location:</div><div class="detail-value">K-17 & L-17</div></div>
+        <div class="detail-item"><div class="detail-label">Energy Consumption (kWh):</div><div class="detail-value">—</div></div>
+        <div class="detail-item"><div class="detail-label">Carbon Emissions (tCO2e):</div><div class="detail-value">—</div></div>
+      </div>
+    </div>
+
+    <div class="detail-page" id="sarasDetail">
+      <button class="back-btn" onclick="goBack()">← Back to Map</button>
+      <div class="building-detail">
+        <h2>Saraswati Hostel</h2>
+        <div class="detail-item"><div class="detail-label">Location:</div><div class="detail-value">J-18</div></div>
+        <div class="detail-item"><div class="detail-label">Energy Consumption (kWh):</div><div class="detail-value">—</div></div>
+        <div class="detail-item"><div class="detail-label">Carbon Emissions (tCO2e):</div><div class="detail-value">—</div></div>
+      </div>
+    </div>
+
+    <div class="detail-page" id="godavDetail">
+      <button class="back-btn" onclick="goBack()">← Back to Map</button>
+      <div class="building-detail">
+        <h2>Godavari Hostel</h2>
+        <div class="detail-item"><div class="detail-label">Location:</div><div class="detail-value">J-17 & J-18</div></div>
+        <div class="detail-item"><div class="detail-label">Energy Consumption (kWh):</div><div class="detail-value">—</div></div>
+        <div class="detail-item"><div class="detail-label">Carbon Emissions (tCO2e):</div><div class="detail-value">—</div></div>
+      </div>
+    </div>
+
+    <div class="detail-page" id="narmaDetail">
+      <button class="back-btn" onclick="goBack()">← Back to Map</button>
+      <div class="building-detail">
+        <h2>Narmada Hostel</h2>
+        <div class="detail-item"><div class="detail-label">Location:</div><div class="detail-value">I-18</div></div>
+        <div class="detail-item"><div class="detail-label">Energy Consumption (kWh):</div><div class="detail-value">—</div></div>
+        <div class="detail-item"><div class="detail-label">Carbon Emissions (tCO2e):</div><div class="detail-value">—</div></div>
+      </div>
+    </div>
+
+    <div class="detail-page" id="tapDetail">
+      <button class="back-btn" onclick="goBack()">← Back to Map</button>
+      <div class="building-detail">
+        <h2>Tapti Hostel</h2>
+        <div class="detail-item"><div class="detail-label">Location:</div><div class="detail-value">I-18 & I-19</div></div>
+        <div class="detail-item"><div class="detail-label">Energy Consumption (kWh):</div><div class="detail-value">—</div></div>
+        <div class="detail-item"><div class="detail-label">Carbon Emissions (tCO2e):</div><div class="detail-value">—</div></div>
+      </div>
+    </div>
+
+    <div class="detail-page" id="brahmaDetail">
+      <button class="back-btn" onclick="goBack()">← Back to Map</button>
+      <div class="building-detail">
+        <h2>Brahmaputra Hostel</h2>
+        <div class="detail-item"><div class="detail-label">Location:</div><div class="detail-value">H-19 & I-19</div></div>
+        <div class="detail-item"><div class="detail-label">Energy Consumption (kWh):</div><div class="detail-value">—</div></div>
+        <div class="detail-item"><div class="detail-label">Carbon Emissions (tCO2e):</div><div class="detail-value">—</div></div>
+      </div>
+    </div>
+
+    <div class="detail-page" id="pampaDetail">
+      <button class="back-btn" onclick="goBack()">← Back to Map</button>
+      <div class="building-detail">
+        <h2>Pamba Hostel</h2>
+        <div class="detail-item"><div class="detail-label">Location:</div><div class="detail-value">K-16</div></div>
+        <div class="detail-item"><div class="detail-label">Energy Consumption (kWh):</div><div class="detail-value">—</div></div>
+        <div class="detail-item"><div class="detail-label">Carbon Emissions (tCO2e):</div><div class="detail-value">—</div></div>
+      </div>
+    </div>
+
+    <div class="detail-page" id="mahaDetail">
+      <button class="back-btn" onclick="goBack()">← Back to Map</button>
+      <div class="building-detail">
+        <h2>Mahanadi Hostel</h2>
+        <div class="detail-item"><div class="detail-label">Location:</div><div class="detail-value">L-16</div></div>
+        <div class="detail-item"><div class="detail-label">Energy Consumption (kWh):</div><div class="detail-value">—</div></div>
+        <div class="detail-item"><div class="detail-label">Carbon Emissions (tCO2e):</div><div class="detail-value">—</div></div>
+      </div>
+    </div>
+
+    <div class="detail-page" id="tampaDetail">
+      <button class="back-btn" onclick="goBack()">← Back to Map</button>
+      <div class="building-detail">
+        <h2>Tamiraparani Hostel</h2>
+        <div class="detail-item"><div class="detail-label">Location:</div><div class="detail-value">K-16</div></div>
+        <div class="detail-item"><div class="detail-label">Energy Consumption (kWh):</div><div class="detail-value">—</div></div>
+        <div class="detail-item"><div class="detail-label">Carbon Emissions (tCO2e):</div><div class="detail-value">—</div></div>
+      </div>
+    </div>
+
+    <div class="detail-page" id="sindhuDetail">
+      <button class="back-btn" onclick="goBack()">← Back to Map</button>
+      <div class="building-detail">
+        <h2>Sindhu Hostel</h2>
+        <div class="detail-item"><div class="detail-label">Location:</div><div class="detail-value">K-16</div></div>
+        <div class="detail-item"><div class="detail-label">Energy Consumption (kWh):</div><div class="detail-value">—</div></div>
+        <div class="detail-item"><div class="detail-label">Carbon Emissions (tCO2e):</div><div class="detail-value">—</div></div>
+      </div>
+    </div>
+
+    <div class="detail-page" id="krishDetail">
+      <button class="back-btn" onclick="goBack()">← Back to Map</button>
+      <div class="building-detail">
+        <h2>Krishna Hostel</h2>
+        <div class="detail-item"><div class="detail-label">Location:</div><div class="detail-value">G-19, H-19 & H-20</div></div>
+        <div class="detail-item"><div class="detail-label">Energy Consumption (kWh):</div><div class="detail-value">—</div></div>
+        <div class="detail-item"><div class="detail-label">Carbon Emissions (tCO2e):</div><div class="detail-value">—</div></div>
+      </div>
+    </div>
+
+    <div class="detail-page" id="cauvDetail">
+      <button class="back-btn" onclick="goBack()">← Back to Map</button>
+      <div class="building-detail">
+        <h2>Cauvery Hostel</h2>
+        <div class="detail-item"><div class="detail-label">Location:</div><div class="detail-value">H-18</div></div>
+        <div class="detail-item"><div class="detail-label">Energy Consumption (kWh):</div><div class="detail-value">—</div></div>
+        <div class="detail-item"><div class="detail-label">Carbon Emissions (tCO2e):</div><div class="detail-value">—</div></div>
+      </div>
+    </div>
+
+    <div class="detail-page" id="tungDetail">
+      <button class="back-btn" onclick="goBack()">← Back to Map</button>
+      <div class="building-detail">
+        <h2>Tunga Hostel</h2>
+        <div class="detail-item"><div class="detail-label">Location:</div><div class="detail-value">G-17 & G-18</div></div>
+        <div class="detail-item"><div class="detail-label">Energy Consumption (kWh):</div><div class="detail-value">—</div></div>
+        <div class="detail-item"><div class="detail-label">Carbon Emissions (tCO2e):</div><div class="detail-value">—</div></div>
+      </div>
+    </div>
+
+    <div class="detail-page" id="bhadraDetail">
+      <button class="back-btn" onclick="goBack()">← Back to Map</button>
+      <div class="building-detail">
+        <h2>Bhadra Hostel</h2>
+        <div class="detail-item"><div class="detail-label">Location:</div><div class="detail-value">G-17 & G-18</div></div>
+        <div class="detail-item"><div class="detail-label">Energy Consumption (kWh):</div><div class="detail-value">—</div></div>
+        <div class="detail-item"><div class="detail-label">Carbon Emissions (tCO2e):</div><div class="detail-value">—</div></div>
+      </div>
+    </div>
+
+    <div class="detail-page" id="sabarDetail">
+      <button class="back-btn" onclick="goBack()">← Back to Map</button>
+      <div class="building-detail">
+        <h2>Sabarmati Hostel</h2>
+        <div class="detail-item"><div class="detail-label">Location:</div><div class="detail-value">H-15 & I-15</div></div>
+        <div class="detail-item"><div class="detail-label">Energy Consumption (kWh):</div><div class="detail-value">—</div></div>
+        <div class="detail-item"><div class="detail-label">Carbon Emissions (tCO2e):</div><div class="detail-value">—</div></div>
+      </div>
+    </div>
+
+    <div class="detail-page" id="sharavDetail">
+      <button class="back-btn" onclick="goBack()">← Back to Map</button>
+      <div class="building-detail">
+        <h2>Sharavathi Hostel</h2>
+        <div class="detail-item"><div class="detail-label">Location:</div><div class="detail-value">H-15 & I-15</div></div>
+        <div class="detail-item"><div class="detail-label">Energy Consumption (kWh):</div><div class="detail-value">—</div></div>
+        <div class="detail-item"><div class="detail-label">Carbon Emissions (tCO2e):</div><div class="detail-value">—</div></div>
+      </div>
+    </div>
+
+    <div class="detail-page" id="sarayuDetail">
+      <button class="back-btn" onclick="goBack()">← Back to Map</button>
+      <div class="building-detail">
+        <h2>Sarayu Hostel</h2>
+        <div class="detail-item"><div class="detail-label">Location:</div><div class="detail-value">I-14</div></div>
+        <div class="detail-item"><div class="detail-label">Energy Consumption (kWh):</div><div class="detail-value">—</div></div>
+        <div class="detail-item"><div class="detail-label">Carbon Emissions (tCO2e):</div><div class="detail-value">—</div></div>
+      </div>
+    </div>
+
+    <div class="detail-page" id="swarnaDetail">
+      <button class="back-btn" onclick="goBack()">← Back to Map</button>
+      <div class="building-detail">
+        <h2>Swarnamukhi Hostel</h2>
+        <div class="detail-item"><div class="detail-label">Location:</div><div class="detail-value">Not specified on map</div></div>
+        <div class="detail-item"><div class="detail-label">Energy Consumption (kWh):</div><div class="detail-value">—</div></div>
+        <div class="detail-item"><div class="detail-label">Carbon Emissions (tCO2e):</div><div class="detail-value">—</div></div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    function showBuilding(building) {
+      document.getElementById('homePage').classList.add('hidden');
+      
+      const detailPages = {
+        alak: 'alakDetail',
+        yamun: 'yamunDetail',
+        mandak: 'mandakDetail',
+        gana: 'ganaDetail',
+        saras: 'sarasDetail',
+        godav: 'godavDetail',
+        narma: 'narmaDetail',
+        tap: 'tapDetail',
+        brahma: 'brahmaDetail',
+        pampa: 'pampaDetail',
+        maha: 'mahaDetail',
+        tampa: 'tampaDetail',
+        sindhu: 'sindhuDetail',
+        krish: 'krishDetail',
+        cauv: 'cauvDetail',
+        tung: 'tungDetail',
+        bhadra: 'bhadraDetail',
+        sabar: 'sabarDetail',
+        sharav: 'sharavDetail',
+        sarayu: 'sarayuDetail',
+        swarna: 'swarnaDetail'
+      };
+      
+      document.getElementById(detailPages[building]).classList.add('active');
+    }
+    
+    function showSelectedFromDropdown() {
+      const select = document.getElementById('buildingSelect');
+      const building = select.value;
+      if (!building) {
+        alert('Please select a hostel first!');
+        return;
+      }
+      showBuilding(building);
+    }
+    
+    function goBack() {
+      document.querySelectorAll('.detail-page').forEach(page => page.classList.remove('active'));
+      document.getElementById('homePage').classList.remove('hidden');
+      document.getElementById('buildingSelect').value = '';
+    }
+  </script>
+</body>
+</html>
